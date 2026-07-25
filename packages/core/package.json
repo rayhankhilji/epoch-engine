@@ -1,0 +1,12 @@
+{
+  "name": "@epoch/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Epoch simulation core — agents, memory, cognition, economy, society, time.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "license": "MIT"
+}
