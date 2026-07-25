@@ -18,8 +18,8 @@
     "dev:all": "node scripts/dev.mjs",
     "build": "npm run build --workspace=@epoch/web",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node --test --experimental-strip-types \"packages/*/test/*.test.ts\"",
-    "sim": "node --experimental-strip-types --no-warnings apps/server/src/cli.ts",
+    "test": "node --test \"packages/*/test/*.test.ts\"",
+    "sim": "node --no-warnings apps/server/src/cli.ts",
     "lint": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
