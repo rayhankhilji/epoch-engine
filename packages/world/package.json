@@ -1,0 +1,15 @@
+{
+  "name": "@epoch/world",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Live reality for Epoch — weather, markets, currencies, news and geography from free, keyless public APIs.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@epoch/core": "*"
+  },
+  "license": "MIT"
+}
