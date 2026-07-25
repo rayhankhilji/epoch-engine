@@ -187,7 +187,9 @@ const HANDLERS: Partial<Record<ActionKind, Handler>> = {
   },
 
   apply_for_job(world, rng, agent, args) {
-    const role = str(args.role) || 'a new role';
+    // Falling back to the agent's current occupation keeps a successful move
+    // from renaming their job to a placeholder.
+    const role = str(args.role) || agent.occupation;
     const targetOrg = str(args.orgId) ? world.organizations[str(args.orgId)!] : undefined;
 
     const referral = targetOrg

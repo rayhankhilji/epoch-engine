@@ -19,6 +19,8 @@ export interface CompatConfig {
   envKey?: string;
   /** Env var that can override the base URL. */
   envBaseUrl?: string;
+  /** When true, the provider is only considered configured once `envBaseUrl` is set. */
+  requiresBaseUrl?: boolean;
   baseURL?: string;
   keysUrl?: string;
   models: Record<Tier, string>;
@@ -92,7 +94,10 @@ export const COMPAT_PROVIDERS: CompatConfig[] = [
   {
     id: 'ollama',
     label: 'Ollama (local)',
+    // Opt-in: a local server that isn't running must never be auto-selected,
+    // so Ollama counts as configured only once OLLAMA_BASE_URL is set.
     envBaseUrl: 'OLLAMA_BASE_URL',
+    requiresBaseUrl: true,
     baseURL: 'http://127.0.0.1:11434/v1',
     keysUrl: 'https://ollama.com',
     models: { fast: 'llama3.2', standard: 'llama3.1', deep: 'llama3.1:70b' },
@@ -125,7 +130,11 @@ export function createCompatProvider(config: CompatConfig): Provider {
     label: config.label,
     keysUrl: config.keysUrl,
 
-    isConfigured: () => (config.envKey ? Boolean(process.env[config.envKey]) : true),
+    isConfigured: () => {
+      if (config.envKey) return Boolean(process.env[config.envKey]);
+      if (config.requiresBaseUrl) return Boolean(config.envBaseUrl && process.env[config.envBaseUrl]);
+      return true;
+    },
 
     modelFor: (tier) =>
       process.env[`EPOCH_MODEL_${config.id.toUpperCase()}_${tier.toUpperCase()}`] ?? config.models[tier],
