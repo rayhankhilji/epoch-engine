@@ -1,0 +1,29 @@
+{
+  "name": "epoch-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A simulation engine for intelligence — hundreds of autonomous LLM agents living inside a persistent, real-world-grounded sandbox.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@epoch/server",
+    "dev:web": "npm run dev --workspace=@epoch/web",
+    "dev:all": "node scripts/dev.mjs",
+    "build": "npm run build --workspace=@epoch/web",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node --test --experimental-strip-types \"packages/*/test/*.test.ts\"",
+    "sim": "node --experimental-strip-types --no-warnings apps/server/src/cli.ts",
+    "lint": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

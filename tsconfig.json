@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": false,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@epoch/core": ["packages/core/src/index.ts"],
+      "@epoch/core/*": ["packages/core/src/*"],
+      "@epoch/llm": ["packages/llm/src/index.ts"],
+      "@epoch/llm/*": ["packages/llm/src/*"],
+      "@epoch/world": ["packages/world/src/index.ts"],
+      "@epoch/world/*": ["packages/world/src/*"]
+    }
+  },
+  "include": ["packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "apps/server/src/**/*.ts", "scripts/**/*.mjs"],
+  "exclude": ["node_modules", "**/dist", "**/.next", "apps/web"]
+}

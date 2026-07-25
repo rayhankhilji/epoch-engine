@@ -1,0 +1,31 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# Local env / BYOK secrets — never commit keys
+.env
+.env.*
+!.env.example
+
+# Simulation state
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.epoch-cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
