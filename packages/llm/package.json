@@ -1,0 +1,17 @@
+{
+  "name": "@epoch/llm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bring-your-own-key router that lets every Epoch agent think through the provider of your choosing.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@epoch/core": "*",
+    "@anthropic-ai/sdk": "^0.68.0",
+    "openai": "^6.9.0"
+  },
+  "license": "MIT"
+}
