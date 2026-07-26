@@ -11,8 +11,9 @@ coverage/
 .env.*
 !.env.example
 
-# Simulation state
-data/
+# Simulation state — anchored to the repo root, or it also swallows
+# packages/core/src/data, which is source, not state.
+/data/
 *.db
 *.db-journal
 *.db-wal
