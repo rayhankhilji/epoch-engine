@@ -23,6 +23,21 @@ export interface EmitInput {
   meta?: Record<string, unknown>;
 }
 
+/**
+ * How many events stay resident in `world.timeline`.
+ *
+ * The timeline is conceptually infinite — it is the world's git history — but
+ * the durable copy lives in the server's database, not in this array. Holding
+ * every event in memory forever is what exhausts the heap on a long run, so the
+ * array is a window onto the recent past and anything older is read back from
+ * storage. `world.stats.events` remains the true count of everything that has
+ * ever happened.
+ */
+const MAX_RESIDENT = 2000;
+
+/** Trim in blocks rather than per-event, so the splice cost is amortised. */
+const TRIM_SLACK = 512;
+
 const listeners = new Set<EventListener>();
 
 /** Subscribe to every event as it is emitted. Returns an unsubscribe fn. */
@@ -48,6 +63,10 @@ export function emit(world: World, input: EmitInput): WorldEvent {
 
   world.timeline.push(event);
   world.stats.events++;
+
+  if (world.timeline.length > MAX_RESIDENT + TRIM_SLACK) {
+    world.timeline.splice(0, world.timeline.length - MAX_RESIDENT);
+  }
 
   for (const listener of listeners) {
     try {

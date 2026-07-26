@@ -21,6 +21,7 @@ import {
   topBeliefs,
   type Agent,
   type World,
+  type WorldEvent,
 } from '@epoch/core';
 import type { RunningWorld } from './runtime.ts';
 
@@ -48,7 +49,8 @@ export function worldSummary(running: RunningWorld) {
       alive: alive.length,
       cities: Object.keys(world.cities).length,
       organizations: Object.values(world.organizations).filter((o) => o.status !== 'dead').length,
-      events: world.timeline.length,
+      // Total ever emitted, not the resident window.
+      events: world.stats.events,
     },
     mood: alive.length > 0 ? average(alive.map((a) => a.state.mood)) : 0,
     stress: alive.length > 0 ? average(alive.map((a) => a.state.stress)) : 0,
@@ -91,8 +93,14 @@ export function agentSummary(world: World, agent: Agent) {
   };
 }
 
-/** The full inner life of one person. */
-export function agentDetail(world: World, agent: Agent) {
+/**
+ * The full inner life of one person.
+ *
+ * `timeline` is passed in from storage rather than read off the world, because
+ * `world.timeline` only holds the recent window — a person's whole life is in
+ * the database.
+ */
+export function agentDetail(world: World, agent: Agent, timeline?: WorldEvent[]) {
   const city = world.cities[agent.cityId];
 
   return {
@@ -169,7 +177,7 @@ export function agentDetail(world: World, agent: Agent) {
       interactions: rel.interactions,
     })),
 
-    timeline: agentTimeline(world, agent.id, 200),
+    timeline: timeline ?? agentTimeline(world, agent.id, 200),
   };
 }
 
@@ -223,7 +231,8 @@ export function organizations(world: World) {
     .map((org) => ({
       ...org,
       cityName: world.cities[org.cityId]?.name ?? 'unknown',
-      runwayMonths: finite(runwayMonths(org)),
+      // A company past zero cash has no runway, not negative runway.
+      runwayMonths: finite(Math.max(0, runwayMonths(org))),
       valuationLabel: `$${formatCompact(org.valuation)}`,
       founders: org.founderIds.map((id) => world.agents[id]?.name).filter(Boolean),
       headcount: org.employeeIds.length,

@@ -255,13 +255,21 @@ export class Runtime {
     });
   }
 
+  /**
+   * Flush newly emitted events to storage.
+   *
+   * Counted against `stats.events` — the total ever emitted — rather than the
+   * length of `world.timeline`, because the timeline is a bounded window that
+   * drops old events once they are safely on disk.
+   */
   private persistEvents(running: RunningWorld): void {
-    const timeline = running.world.timeline;
-    if (timeline.length <= running.savedEvents) return;
+    const total = running.world.stats.events;
+    if (total <= running.savedEvents) return;
 
-    const fresh = timeline.slice(running.savedEvents);
-    this.store.appendEvents(running.id, fresh, running.savedEvents);
-    running.savedEvents = timeline.length;
+    const pending = Math.min(total - running.savedEvents, running.world.timeline.length);
+    const fresh = running.world.timeline.slice(-pending);
+    this.store.appendEvents(running.id, fresh, total - pending);
+    running.savedEvents = total;
   }
 
   private save(running: RunningWorld): void {

@@ -20,7 +20,7 @@ import type {
   World,
   WorldEvent,
 } from './types.ts';
-import { Rng, clamp } from './rng.ts';
+import { Rng, clamp, gain } from './rng.ts';
 import { DAY, HOUR, MINUTE, boundariesCrossed, isAsleep, localParts } from './time.ts';
 import { appraise, buildActRequest, buildPlanRequest, buildReflectRequest, parseDecision, parseReflection, type Appraisal } from './cognition.ts';
 import { executeAction, resolveArrivals } from './actions.ts';
@@ -177,7 +177,7 @@ export class Simulation {
       const asleep = isAsleep(this.world, city?.timezone ?? 'UTC');
 
       if (asleep) {
-        agent.state.energy = clamp(agent.state.energy + 0.055);
+        agent.state.energy = gain(agent.state.energy, 0.09);
         agent.state.stress = clamp(agent.state.stress - 0.02);
       } else {
         agent.state.energy = clamp(agent.state.energy - 0.018);
@@ -187,7 +187,7 @@ export class Simulation {
       if (agent.state.stress > 0.75) agent.state.health = clamp(agent.state.health - 0.0012);
       if (agent.state.energy < 0.15) agent.state.health = clamp(agent.state.health - 0.0008);
       if (agent.state.health > 0.85 && agent.state.stress < 0.4) {
-        agent.state.health = clamp(agent.state.health + 0.0003);
+        agent.state.health = gain(agent.state.health, 0.0004);
       }
 
       // Mood converges on satisfaction; satisfaction moves only through living.

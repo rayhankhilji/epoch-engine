@@ -73,7 +73,7 @@ export interface SourceStatus {
 /** Shown in the CLI and the UI so it's obvious where the world's facts come from. */
 export const SOURCES: SourceStatus[] = [
   { id: 'open-meteo', label: 'Open-Meteo', url: 'https://open-meteo.com', requiresKey: false, describes: 'Current weather for every city' },
-  { id: 'stooq', label: 'Stooq', url: 'https://stooq.com', requiresKey: false, describes: 'Equity and index prices' },
+  { id: 'yahoo-finance', label: 'Yahoo Finance', url: 'https://finance.yahoo.com', requiresKey: false, describes: 'Equity and index prices' },
   { id: 'coingecko', label: 'CoinGecko', url: 'https://coingecko.com', requiresKey: false, describes: 'Crypto prices' },
   { id: 'frankfurter', label: 'Frankfurter (ECB)', url: 'https://frankfurter.app', requiresKey: false, describes: 'Foreign exchange rates' },
   { id: 'hacker-news', label: 'Hacker News', url: 'https://news.ycombinator.com', requiresKey: false, describes: 'Technology and startup news' },

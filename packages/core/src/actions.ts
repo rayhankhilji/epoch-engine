@@ -17,7 +17,7 @@ import type {
   Organization,
   World,
 } from './types.ts';
-import { Rng, clamp } from './rng.ts';
+import { Rng, clamp, gain } from './rng.ts';
 import { HOUR } from './time.ts';
 import { emit } from './events.ts';
 import { remember, learnFact } from './memory.ts';
@@ -188,8 +188,10 @@ const HANDLERS: Partial<Record<ActionKind, Handler>> = {
 
   apply_for_job(world, rng, agent, args) {
     // Falling back to the agent's current occupation keeps a successful move
-    // from renaming their job to a placeholder.
-    const role = str(args.role) || agent.occupation;
+    // from renaming their job to a placeholder — except when that occupation is
+    // the absence of one, which would read as 'got the job: Unemployed'.
+    const current = agent.occupation;
+    const role = str(args.role) || (current === 'Unemployed' || current === 'Student' ? 'a job, any job' : current);
     const targetOrg = str(args.orgId) ? world.organizations[str(args.orgId)!] : undefined;
 
     const referral = targetOrg
@@ -220,8 +222,8 @@ const HANDLERS: Partial<Record<ActionKind, Handler>> = {
       agent.occupation = role;
     }
 
-    agent.state.confidence = clamp(agent.state.confidence + 0.12);
-    agent.state.satisfaction = clamp(agent.state.satisfaction + 0.1);
+    agent.state.confidence = gain(agent.state.confidence, 0.12);
+    agent.state.satisfaction = gain(agent.state.satisfaction, 0.1);
     return {
       ok: true,
       summary: `Got the job: ${role}${targetOrg ? ` at ${targetOrg.name}` : ''}. Salary went from ${formatCompact(oldSalary)} to ${formatCompact(agent.finances.salary)} ${agent.finances.currency}.`,
@@ -377,7 +379,7 @@ const HANDLERS: Partial<Record<ActionKind, Handler>> = {
     const [other] = plausibleEncounters(world, agent, rng, 1);
     agent.state.energy = clamp(agent.state.energy - 0.04 + agent.personality.extraversion * 0.03);
     agent.state.stress = clamp(agent.state.stress - 0.05 * agent.personality.extraversion);
-    agent.state.mood = clamp(agent.state.mood + 0.04);
+    agent.state.mood = gain(agent.state.mood, 0.04);
 
     if (!other) {
       return { ok: true, summary: `Went ${where} alone. Quiet night.`, importance: 0.15, valence: 0.05 };
@@ -533,7 +535,7 @@ const HANDLERS: Partial<Record<ActionKind, Handler>> = {
     agent.cityId = destination.id;
     agent.travellingTo = undefined;
     agent.state.stress = clamp(agent.state.stress + 0.15);
-    agent.state.satisfaction = clamp(agent.state.satisfaction + 0.08);
+    agent.state.satisfaction = gain(agent.state.satisfaction, 0.08);
 
     learnFact(
       agent.memory.graph,
@@ -562,10 +564,10 @@ const HANDLERS: Partial<Record<ActionKind, Handler>> = {
 
   // ── Body ──────────────────────────────────────────────────────────────────
   exercise(_world, rng, agent) {
-    agent.state.health = clamp(agent.state.health + 0.012);
+    agent.state.health = gain(agent.state.health, 0.012);
     agent.state.energy = clamp(agent.state.energy - 0.03);
     agent.state.stress = clamp(agent.state.stress - 0.07);
-    agent.state.mood = clamp(agent.state.mood + 0.05);
+    agent.state.mood = gain(agent.state.mood, 0.05);
     void rng;
     return { ok: true, summary: `Trained. Head feels clearer.`, importance: 0.12, valence: 0.35 };
   },

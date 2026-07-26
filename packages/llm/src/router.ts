@@ -62,6 +62,17 @@ export interface Mind {
   reset(): void;
 }
 
+/**
+ * How many prompts the response cache remembers.
+ *
+ * This has to be bounded and it has to be small. A situation report is several
+ * kilobytes and every agent-hour produces a new one, so an unbounded cache
+ * keyed on the prompt text will exhaust the heap in minutes on a fast run —
+ * which is exactly what it did before this cap existed. Keys are hashed rather
+ * than stored, so the cache holds no prompt text at all.
+ */
+const CACHE_LIMIT = 256;
+
 export function createMind(options: MindOptions = {}): Mind {
   const maxAttempts = options.maxAttempts ?? 3;
   const timeoutMs = options.timeoutMs ?? 60_000;
@@ -71,8 +82,20 @@ export function createMind(options: MindOptions = {}): Mind {
 
   const stats: MindStats = emptyStats();
 
+  const remember = (key: string, value: unknown) => {
+    if (!cache) return;
+    // Map preserves insertion order, so the first key is the oldest.
+    if (cache.size >= CACHE_LIMIT) {
+      const oldest = cache.keys().next().value;
+      if (oldest !== undefined) cache.delete(oldest);
+    }
+    cache.set(key, value);
+  };
+
   const fn: MindFn = async <T,>(request: MindRequest): Promise<MindResponse<T>> => {
-    const cacheKey = cache ? `${request.mind.provider}|${request.tier}|${request.system}|${request.user}` : null;
+    const cacheKey = cache
+      ? `${request.mind.provider}|${request.tier}|${hash(request.system)}|${hash(request.user)}`
+      : null;
     if (cacheKey && cache!.has(cacheKey)) {
       return { data: cache!.get(cacheKey) as T, usage: { inputTokens: 0, outputTokens: 0, costUSD: 0 } };
     }
@@ -104,7 +127,7 @@ export function createMind(options: MindOptions = {}): Mind {
 
         const usage = record(stats, provider.id, result);
         options.onUsage?.({ ...usage, provider: provider.id, model: result.model, kind: request.kind });
-        if (cacheKey) cache!.set(cacheKey, parsed.data);
+        if (cacheKey) remember(cacheKey, parsed.data);
 
         return { data: parsed.data as T, usage, model: result.model, provider: provider.id };
       } catch (error) {
@@ -228,4 +251,14 @@ function emptyStats(): MindStats {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** FNV-1a. Used so the cache holds fixed-size keys instead of whole prompts. */
+function hash(input: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
 }

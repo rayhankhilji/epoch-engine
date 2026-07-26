@@ -192,21 +192,41 @@ test('no cities means no request', async () => {
 // Markets
 // ─────────────────────────────────────────────────────────────────────────────
 
-const STOOQ_CSV = [
-  'Symbol,Date,Time,Open,High,Low,Close,Volume',
-  'aapl.us,2026-07-24,21:00:00,210.00,215.00,209.00,214.20,51234567',
-  'msft.us,2026-07-24,21:00:00,400.00,405.00,398.00,396.00,21234567',
-  'nvda.us,2026-07-24,N/D,N/D,N/D,N/D,N/D,N/D',
-].join('\n');
+/** A recorded Yahoo Finance spark response. */
+function sparkBody(entries: Array<[string, number, number, string?]>): string {
+  return JSON.stringify({
+    spark: {
+      result: entries.map(([symbol, price, previous, name]) => ({
+        symbol,
+        response: [
+          {
+            meta: {
+              symbol,
+              currency: 'USD',
+              regularMarketPrice: price,
+              chartPreviousClose: previous,
+              shortName: name,
+            },
+          },
+        ],
+      })),
+    },
+  });
+}
 
-test('Stooq CSV parses into quotes with a computed daily change', async () => {
-  const restore = stubFetch(() => ({ body: STOOQ_CSV }));
+const SPARK = sparkBody([
+  ['AAPL', 214.2, 210, 'Apple Inc.'],
+  ['MSFT', 396, 400, 'Microsoft Corporation'],
+]);
+
+test('Yahoo Finance quotes parse with a change against previous close', async () => {
+  const restore = stubFetch(() => ({ body: SPARK }));
   try {
-    const quotes = await fetchStockQuotes(['AAPL', 'MSFT', 'NVDA']);
-    assert.equal(quotes.length, 2, 'rows with no data are skipped');
+    const quotes = await fetchStockQuotes(['AAPL', 'MSFT']);
+    assert.equal(quotes.length, 2);
 
     const apple = quotes.find((q) => q.symbol === 'AAPL')!;
-    assert.equal(apple.name, 'Apple');
+    assert.equal(apple.name, 'Apple Inc.');
     assert.equal(apple.price, 214.2);
     assert.equal(apple.currency, 'USD');
     assert.equal(apple.kind, 'stock');
@@ -219,12 +239,23 @@ test('Stooq CSV parses into quotes with a computed daily change', async () => {
   }
 });
 
-test('index symbols are typed as indices', async () => {
+test('a symbol with no price is skipped rather than charted at zero', async () => {
   const restore = stubFetch(() => ({
-    body: 'Symbol,Date,Time,Open,High,Low,Close,Volume\n^spx,2026-07-24,21:00:00,5000,5100,4990,5080,0',
+    body: JSON.stringify({
+      spark: { result: [{ symbol: 'HALTED', response: [{ meta: { symbol: 'HALTED', currency: 'USD' } }] }] },
+    }),
   }));
   try {
-    const quotes = await fetchStockQuotes(['^SPX']);
+    assert.deepEqual(await fetchStockQuotes(['HALTED']), []);
+  } finally {
+    restore();
+  }
+});
+
+test('index symbols are typed as indices', async () => {
+  const restore = stubFetch(() => ({ body: sparkBody([['^GSPC', 5080, 5000, 'S&P 500']]) }));
+  try {
+    const quotes = await fetchStockQuotes(['^GSPC']);
     assert.equal(quotes[0]!.kind, 'index');
     assert.equal(quotes[0]!.name, 'S&P 500');
   } finally {
@@ -274,7 +305,7 @@ test('one failing market source does not cost you the others', async () => {
   const warnings: string[] = [];
   const restore = stubFetch((url) => {
     if (url.includes('coingecko')) return { status: 500, body: 'down' };
-    if (url.includes('stooq')) return { body: STOOQ_CSV };
+    if (url.includes('finance.yahoo.com')) return { body: SPARK };
     return { body: JSON.stringify({ base: 'USD', rates: { EUR: 0.92 } }) };
   });
 

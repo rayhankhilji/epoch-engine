@@ -1,0 +1,146 @@
+@import 'tailwindcss';
+
+/*
+ * Epoch is a dark instrument. That is a deliberate choice, not a default: the
+ * globe is the centre of the product and it only works against black, so the
+ * whole surface is designed once, for dark, and validated against it.
+ *
+ * The data-visualisation colours below are a validated categorical palette —
+ * every adjacent pair clears the colour-vision-deficiency separation floor
+ * against this exact surface. Do not substitute hues by eye.
+ */
+
+@theme {
+  /* Surfaces */
+  --color-void: #050505;
+  --color-plane: #0d0d0d;
+  --color-surface: #131313;
+  --color-raised: #1a1a19;
+  --color-hairline: #262624;
+
+  /* Ink */
+  --color-ink: #ffffff;
+  --color-ink-secondary: #c3c2b7;
+  --color-ink-muted: #898781;
+  --color-ink-faint: #56554f;
+
+  /* Categorical series — fixed order, never cycled */
+  --color-series-1: #3987e5;
+  --color-series-2: #d95926;
+  --color-series-3: #199e70;
+  --color-series-4: #c98500;
+  --color-series-5: #d55181;
+  --color-series-6: #008300;
+  --color-series-7: #9085e9;
+  --color-series-8: #e66767;
+
+  /* Status — reserved, never reused as a series */
+  --color-good: #0ca30c;
+  --color-warning: #fab219;
+  --color-serious: #ec835a;
+  --color-critical: #d03b3b;
+
+  /* Chart chrome */
+  --color-grid: #2c2c2a;
+  --color-baseline: #383835;
+
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-void);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+/* A single quiet scrollbar language everywhere. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-hairline) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-hairline);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Numbers that must line up vertically get tabular figures; nothing else does. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The slow ambient drift behind the globe. */
+@keyframes epoch-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate3d(2%, -2%, 0) scale(1.08);
+    opacity: 0.75;
+  }
+}
+
+.ambient {
+  animation: epoch-drift 24s ease-in-out infinite;
+}
+
+@keyframes epoch-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.enter {
+  animation: epoch-fade-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* A live indicator that reads as "this is happening now". */
+@keyframes epoch-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-good) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.pulse {
+  animation: epoch-pulse 2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient,
+  .enter,
+  .pulse {
+    animation: none;
+  }
+}

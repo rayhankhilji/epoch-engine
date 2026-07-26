@@ -79,6 +79,11 @@ export class Store {
 
   saveWorld(id: string, scenarioId: string, world: World): void {
     const now = Date.now();
+
+    // The timeline has its own table, so keeping it in the snapshot would store
+    // every event twice and make each autosave proportional to the world's
+    // entire history. Only a short tail is kept, for context on resume.
+    const snapshot: World = { ...world, timeline: world.timeline.slice(-200) };
     this.db
       .prepare(
         `INSERT INTO worlds (id, name, scenario_id, seed, created_at, updated_at, sim_time, tick, agent_count, state)
@@ -100,7 +105,7 @@ export class Store {
         world.t,
         world.tick,
         Object.keys(world.agents).length,
-        JSON.stringify(world),
+        JSON.stringify(snapshot),
       );
   }
 

@@ -64,7 +64,9 @@ export async function fetchGdelt(query: string, limit = 15): Promise<NewsItem[]>
     `${GDELT}?query=${encodeURIComponent(query)}` +
     `&mode=artlist&format=json&maxrecords=${limit}&sort=datedesc`;
 
-  const payload = await fetchJson<GdeltResponse>(url, { ttlMs: 30 * 60_000 });
+  // GDELT rate-limits hard and answers 429 rather than queueing, so this holds
+  // results for longer and does not retry — a retry just burns the next slot.
+  const payload = await fetchJson<GdeltResponse>(url, { ttlMs: 2 * 60 * 60_000, retries: 0 });
 
   return (payload.articles ?? []).flatMap((article) => {
     if (!article.title || !article.url) return [];

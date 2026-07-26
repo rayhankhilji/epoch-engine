@@ -220,7 +220,9 @@ async function handle(
   if (agentMatch) {
     const agent = world.agents[agentMatch[1]!];
     if (!agent) return send(res, 404, { error: `Agent ${agentMatch[1]} not found` });
-    return send(res, 200, agentDetail(world, agent));
+    // Their whole life, not just the resident window of the timeline.
+    const life = store.queryEvents(worldId, { agentId: agent.id, limit: 300 }).reverse();
+    return send(res, 200, agentDetail(world, agent, life));
   }
 
   return send(res, 404, { error: `No route for ${path}` });

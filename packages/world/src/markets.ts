@@ -1,82 +1,94 @@
 /**
  * Markets and currencies.
  *
- *   Equities & indices — Stooq CSV quotes
+ *   Equities & indices — Yahoo Finance's public spark endpoint
  *   Crypto             — CoinGecko public API
  *   FX                 — Frankfurter (European Central Bank reference rates)
  *
  * All three are free and keyless. When an agent in Lagos buys Apple stock, the
  * price they pay is the price Apple actually traded at, and the naira they pay
  * it in converts at a real ECB rate.
+ *
+ * (Stooq was the original equities source and had to be replaced: it now gates
+ * its CSV endpoint behind a JavaScript proof-of-work challenge, which a server
+ * cannot answer. Everything here is verified reachable without a browser.)
  */
 
 import type { Quote } from '@epoch/core';
-import { fetchJson, fetchText } from './http.ts';
+import { fetchJson } from './http.ts';
 
 /** The instruments a world tracks by default. */
 export const DEFAULT_SYMBOLS = {
   stocks: ['AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'TSLA', 'META'],
-  indices: ['^SPX', '^NDQ', '^DJI', '^FTM'],
+  indices: ['^GSPC', '^IXIC', '^DJI', '^FTSE'],
   crypto: ['bitcoin', 'ethereum', 'solana'],
 };
 
-const STOOQ = 'https://stooq.com/q/l/';
+const YAHOO = 'https://query1.finance.yahoo.com/v7/finance/spark';
 const COINGECKO = 'https://api.coingecko.com/api/v3/simple/price';
 const FRANKFURTER = 'https://api.frankfurter.app/latest';
 
-/** Human-readable names so prompts don't just show tickers. */
+/** Fallback names, used when the provider doesn't supply one. */
 const NAMES: Record<string, string> = {
   AAPL: 'Apple', MSFT: 'Microsoft', NVDA: 'NVIDIA', GOOGL: 'Alphabet',
   AMZN: 'Amazon', TSLA: 'Tesla', META: 'Meta',
-  '^SPX': 'S&P 500', '^NDQ': 'Nasdaq 100', '^DJI': 'Dow Jones', '^FTM': 'FTSE 100',
+  '^GSPC': 'S&P 500', '^IXIC': 'Nasdaq', '^DJI': 'Dow Jones', '^FTSE': 'FTSE 100',
   bitcoin: 'Bitcoin', ethereum: 'Ethereum', solana: 'Solana',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Equities and indices — Stooq
+// Equities and indices — Yahoo Finance
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Stooq wants lowercase symbols with a market suffix for US equities. */
-function toStooqSymbol(symbol: string): string {
-  if (symbol.startsWith('^')) return symbol.toLowerCase();
-  return `${symbol.toLowerCase()}.us`;
+interface SparkMeta {
+  symbol?: string;
+  currency?: string;
+  regularMarketPrice?: number;
+  chartPreviousClose?: number;
+  previousClose?: number;
+  shortName?: string;
+  longName?: string;
+  instrumentType?: string;
 }
 
-export async function fetchStockQuotes(symbols: string[] = [...DEFAULT_SYMBOLS.stocks, ...DEFAULT_SYMBOLS.indices]): Promise<Quote[]> {
+interface SparkResponse {
+  spark?: { result?: Array<{ symbol: string; response?: Array<{ meta?: SparkMeta }> }> };
+}
+
+/** Every symbol in one request, with the day's change against previous close. */
+export async function fetchStockQuotes(
+  symbols: string[] = [...DEFAULT_SYMBOLS.stocks, ...DEFAULT_SYMBOLS.indices],
+): Promise<Quote[]> {
   if (symbols.length === 0) return [];
 
-  const url = `${STOOQ}?s=${symbols.map(toStooqSymbol).join(',')}&f=sd2t2ohlcv&h&e=csv`;
-  const csv = await fetchText(url, { ttlMs: 15 * 60_000 });
+  const url = `${YAHOO}?symbols=${symbols.map(encodeURIComponent).join(',')}&range=1d&interval=1d`;
+  const payload = await fetchJson<SparkResponse>(url, {
+    ttlMs: 15 * 60_000,
+    // Yahoo's public endpoints reject requests without a browser-ish agent.
+    headers: { 'user-agent': 'Mozilla/5.0 (compatible; epoch-engine/0.1)' },
+  });
 
-  const lines = csv.trim().split(/\r?\n/);
-  const header = lines.shift();
-  if (!header) return [];
+  return (payload.spark?.result ?? []).flatMap((entry) => {
+    const meta = entry.response?.[0]?.meta;
+    const price = meta?.regularMarketPrice;
+    // A halted or unknown symbol comes back with metadata but no price.
+    if (!meta || price == null || !Number.isFinite(price)) return [];
 
-  const columns = header.split(',').map((h) => h.trim().toLowerCase());
-  const index = (name: string) => columns.indexOf(name);
+    const previous = meta.chartPreviousClose ?? meta.previousClose;
+    const symbol = meta.symbol ?? entry.symbol;
 
-  const quotes: Quote[] = [];
-  for (const line of lines) {
-    const cells = line.split(',');
-    const close = Number(cells[index('close')]);
-    const open = Number(cells[index('open')]);
-    if (!Number.isFinite(close) || close <= 0) continue; // "N/D" outside market hours
-
-    const stooqSymbol = (cells[index('symbol')] ?? '').trim().toLowerCase();
-    const symbol = symbols.find((s) => toStooqSymbol(s) === stooqSymbol) ?? stooqSymbol.toUpperCase();
-
-    quotes.push({
-      symbol,
-      name: NAMES[symbol] ?? symbol,
-      price: close,
-      changePct: Number.isFinite(open) && open > 0 ? ((close - open) / open) * 100 : 0,
-      currency: 'USD',
-      kind: symbol.startsWith('^') ? 'index' : 'stock',
-      fetchedAt: Date.now(),
-    });
-  }
-
-  return quotes;
+    return [
+      {
+        symbol,
+        name: meta.shortName ?? meta.longName ?? NAMES[symbol] ?? symbol,
+        price,
+        changePct: previous && previous > 0 ? ((price - previous) / previous) * 100 : 0,
+        currency: meta.currency ?? 'USD',
+        kind: symbol.startsWith('^') ? ('index' as const) : ('stock' as const),
+        fetchedAt: Date.now(),
+      },
+    ];
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

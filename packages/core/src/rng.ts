@@ -96,6 +96,17 @@ export function clamp(value: number, min = 0, max = 1): number {
   return value < min ? min : value > max ? max : value;
 }
 
+/**
+ * Add to a 0..1 quality with diminishing returns.
+ *
+ * A tenth pleasant evening moves your mood far less than the first one. Without
+ * this, any repeatable positive action ratchets a stat to 1 and stays there —
+ * a whole population sitting at 99% mood is the tell.
+ */
+export function gain(current: number, amount: number): number {
+  return clamp(current + amount * (1 - current));
+}
+
 /** Nudge a 0..1 value toward a target, used constantly for agent state drift. */
 export function drift(current: number, target: number, rate: number): number {
   return clamp(current + (target - current) * clamp(rate, 0, 1));
