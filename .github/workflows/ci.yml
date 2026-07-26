@@ -6,10 +6,19 @@ on:
   pull_request:
     branches: [main]
 
+# A newer push makes an older run irrelevant; don't leave both queued.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     name: Typecheck & test
     runs-on: ubuntu-latest
+    # The whole job takes well under a minute. A wedged runner should fail
+    # fast and be re-run, not sit amber for six hours.
+    timeout-minutes: 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -18,11 +27,14 @@ jobs:
           node-version: '22.x'
           cache: npm
 
+      # The lockfile is committed, so install exactly what it says.
       - name: Install
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Typecheck
+        timeout-minutes: 3
         run: npm run typecheck
 
       - name: Test
+        timeout-minutes: 3
         run: npm test
