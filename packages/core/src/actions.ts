@@ -34,6 +34,7 @@ import {
   toUSD,
 } from './economy.ts';
 import { haversineKm, flightHours, flightCostUSD } from './data/cities.ts';
+import { mobilityFor } from './mobility.ts';
 
 export interface ActionSpec {
   kind: ActionKind;
@@ -518,10 +519,28 @@ const HANDLERS: Partial<Record<ActionKind, Handler>> = {
     if (destination.id === agent.cityId) return { ok: false, summary: `I already live here.`, importance: 0.05, valence: 0 };
 
     const origin = world.cities[agent.cityId];
-    const moveCostUSD = 2500 + haversineKm(origin ?? destination, destination) * 0.4;
+
+    // The paperwork comes before the money. Plenty of people can afford a move
+    // they have no right to make.
+    const mobility = mobilityFor(world, agent, destination);
+    if (!mobility.allowed) {
+      return {
+        ok: false,
+        summary: `I looked seriously at moving to ${destination.name}. ${mobility.explanation}`,
+        importance: 0.6,
+        valence: -0.7,
+      };
+    }
+
+    const moveCostUSD = 2500 + haversineKm(origin ?? destination, destination) * 0.4 + mobility.costUSD;
     const cashUSD = toUSD(world.market, agent.finances.cash, agent.finances.currency);
     if (cashUSD < moveCostUSD) {
-      return { ok: false, summary: `I want out of ${origin?.name ?? 'here'}, but moving to ${destination.name} costs about $${formatCompact(moveCostUSD)} and I don't have it.`, importance: 0.5, valence: -0.6 };
+      return {
+        ok: false,
+        summary: `I want out of ${origin?.name ?? 'here'}, but moving to ${destination.name} costs about $${formatCompact(moveCostUSD)}${mobility.costUSD > 0 ? ' once the visa is paid for' : ''} and I don't have it.`,
+        importance: 0.5,
+        valence: -0.6,
+      };
     }
 
     // Convert their savings into the new currency and reprice their salary.
@@ -548,7 +567,7 @@ const HANDLERS: Partial<Record<ActionKind, Handler>> = {
     emit(world, {
       category: 'life',
       title: `${agent.name} moved to ${destination.name}`,
-      detail: str(args.reason) || `Left ${origin?.name ?? 'home'} for good.`,
+      detail: `${str(args.reason) || `Left ${origin?.name ?? 'home'} for good.`} (${mobility.route.replace(/-/g, ' ')})`,
       agentIds: [agent.id],
       cityId: destination.id,
       importance: 0.85,
@@ -556,7 +575,7 @@ const HANDLERS: Partial<Record<ActionKind, Handler>> = {
 
     return {
       ok: true,
-      summary: `I moved to ${destination.name}. ${str(args.reason) ?? 'Time for something different.'} Everything I own is in two bags.`,
+      summary: `I moved to ${destination.name}. ${str(args.reason) ?? 'Time for something different.'} ${mobility.route === 'citizen' || mobility.route === 'freedom-of-movement' ? 'Everything I own is in two bags.' : `It took ${mobility.leadDays} days of paperwork to get the right to be here.`}`,
       importance: 0.9,
       valence: 0.5,
     };

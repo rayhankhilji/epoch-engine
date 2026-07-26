@@ -5,13 +5,14 @@ import { CATEGORY_COLOR, PROVIDER_COLOR, money, pct, simDate } from '@/lib/api';
 import type { AgentDetail } from '@/lib/types';
 import { Chip, Empty, Meter, Row, Spinner } from './ui';
 
-type Tab = 'self' | 'mind' | 'money' | 'people' | 'life';
+type Tab = 'self' | 'mind' | 'money' | 'people' | 'borders' | 'life';
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: 'self', label: 'Self' },
   { id: 'mind', label: 'Mind' },
   { id: 'money', label: 'Money' },
   { id: 'people', label: 'People' },
+  { id: 'borders', label: 'Borders' },
   { id: 'life', label: 'Life' },
 ];
 
@@ -97,6 +98,7 @@ export function AgentPanel({
         {tab === 'mind' && <MindTab agent={agent} startISO={startISO} />}
         {tab === 'money' && <MoneyTab agent={agent} />}
         {tab === 'people' && <PeopleTab agent={agent} onSelectAgent={onSelectAgent} />}
+        {tab === 'borders' && <BordersTab agent={agent} />}
         {tab === 'life' && <LifeTab agent={agent} startISO={startISO} />}
       </div>
     </div>
@@ -336,6 +338,67 @@ function MoneyTab({ agent }: { agent: AgentDetail }) {
           ))}
         </Section>
       )}
+    </div>
+  );
+}
+
+const ROUTE_COLOR: Record<string, string> = {
+  citizen: 'var(--color-good)',
+  'freedom-of-movement': 'var(--color-good)',
+  sponsored: 'var(--color-series-4)',
+  'self-funded': 'var(--color-series-4)',
+  'high-skill': 'var(--color-series-7)',
+  blocked: 'var(--color-critical)',
+};
+
+/**
+ * Where this person is actually allowed to go.
+ *
+ * Often the single most explanatory panel in the inspector: two agents with
+ * identical skills and savings can be looking at completely different worlds.
+ */
+function BordersTab({ agent }: { agent: AgentDetail }) {
+  const open = agent.mobility.filter((m) => m.allowed).length;
+
+  return (
+    <div className="space-y-4">
+      <Section title="Passport">
+        <Row label="Nationality">{agent.passport.nationality}</Row>
+        <div className="mt-1.5">
+          <div className="h-1 overflow-hidden rounded-full bg-grid">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${agent.passport.strength * 100}%`,
+                background: agent.passport.strength > 0.7 ? 'var(--color-good)' : agent.passport.strength > 0.4 ? 'var(--color-warning)' : 'var(--color-critical)',
+              }}
+            />
+          </div>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-ink-muted">{agent.passport.description}</p>
+        </div>
+      </Section>
+
+      <Section title={`Where they could live — ${open} of ${agent.mobility.length} open`}>
+        <ul className="space-y-2">
+          {agent.mobility.map((entry) => (
+            <li key={entry.cityId}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className={`truncate text-xs ${entry.allowed ? 'text-ink' : 'text-ink-faint'}`}>
+                  {entry.cityName}
+                  <span className="text-ink-faint"> · {entry.country}</span>
+                </span>
+                <span
+                  className="shrink-0 text-[10px] uppercase tracking-wider"
+                  style={{ color: ROUTE_COLOR[entry.route] ?? 'var(--color-ink-muted)' }}
+                >
+                  {entry.route.replace(/-/g, ' ')}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-ink-muted">{entry.explanation}</p>
+            </li>
+          ))}
+        </ul>
+      </Section>
     </div>
   );
 }

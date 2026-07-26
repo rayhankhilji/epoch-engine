@@ -45,6 +45,7 @@ import { localParts, HOUR } from './time.ts';
 import { ambientEvents } from './events.ts';
 import { scheduledActivity } from './agents.ts';
 import { haversineKm } from './data/cities.ts';
+import { describeMobility, mobilityFor } from './mobility.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Appraisal — the free minute-by-minute layer
@@ -517,7 +518,7 @@ function nearbyCities(world: World, agent: Agent, limit: number): string {
     .map((c) => ({ city: c, km: haversineKm(here, c) }))
     .sort((a, b) => a.km - b.km)
     .slice(0, limit)
-    .map(({ city, km }) => `- ${city.name}, ${city.country} (id: ${city.id}) — ${Math.round(km)} km, cost of living ${city.costOfLivingIndex}, median salary ${formatCompact(city.medianSalary)} ${city.currency}/mo${city.tags.length ? `, known for ${city.tags.slice(0, 3).join('/')}` : ''}`)
+    .map(({ city, km }) => `- ${city.name}, ${city.country} (id: ${city.id}) — ${Math.round(km)} km, cost of living ${city.costOfLivingIndex}, median salary ${formatCompact(city.medianSalary)} ${city.currency}/mo${city.tags.length ? `, known for ${city.tags.slice(0, 3).join('/')}` : ''}. Immigration: ${describeMobility(mobilityFor(world, agent, city))}.`)
     .join('\n');
 }
 

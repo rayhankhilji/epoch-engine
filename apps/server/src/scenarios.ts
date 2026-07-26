@@ -168,6 +168,55 @@ export const SCENARIOS: ScenarioDefinition[] = [
   },
 
   {
+    id: 'borders',
+    name: 'Borders',
+    summary: 'Four engineers with the same skills and the same ambition. Four different passports.',
+    description:
+      'Identical people in Lagos, Bengaluru, Berlin and San Francisco, all told to build the best career they can. The only variable is which document they were born with. Open the Borders tab on each of them and compare what the world will let them do.',
+    seed: 1948,
+    cityIds: ['city:lagos', 'city:bangalore', 'city:berlin', 'city:san-francisco', 'city:london', 'city:lisbon', 'city:dubai', 'city:tallinn'],
+    population: 16,
+    minutesPerTick: 30,
+    maxConcurrentMinds: 6,
+    minds: MIXED_MINDS,
+    callsPerSimDay: 46,
+    agents: [
+      {
+        name: 'Chidi Adeyemi',
+        cityId: 'city:lagos',
+        occupation: 'Software Engineer',
+        age: 28,
+        goals: ['Build the best career I possibly can, wherever that has to be'],
+        overrides: { traits: { ambition: 0.9, riskTolerance: 0.7, discipline: 0.85, creativity: 0.6, empathy: 0.6, charisma: 0.6, luck: 0.5 } },
+      },
+      {
+        name: 'Anika Sethi',
+        cityId: 'city:bangalore',
+        occupation: 'Software Engineer',
+        age: 28,
+        goals: ['Build the best career I possibly can, wherever that has to be'],
+        overrides: { traits: { ambition: 0.9, riskTolerance: 0.7, discipline: 0.85, creativity: 0.6, empathy: 0.6, charisma: 0.6, luck: 0.5 } },
+      },
+      {
+        name: 'Felix Ashcroft',
+        cityId: 'city:berlin',
+        occupation: 'Software Engineer',
+        age: 28,
+        goals: ['Build the best career I possibly can, wherever that has to be'],
+        overrides: { traits: { ambition: 0.9, riskTolerance: 0.7, discipline: 0.85, creativity: 0.6, empathy: 0.6, charisma: 0.6, luck: 0.5 } },
+      },
+      {
+        name: 'Robin Whitmore',
+        cityId: 'city:san-francisco',
+        occupation: 'Software Engineer',
+        age: 28,
+        goals: ['Build the best career I possibly can, wherever that has to be'],
+        overrides: { traits: { ambition: 0.9, riskTolerance: 0.7, discipline: 0.85, creativity: 0.6, empathy: 0.6, charisma: 0.6, luck: 0.5 } },
+      },
+    ],
+  },
+
+  {
     id: 'earth',
     name: 'Earth',
     summary: 'Two hundred people across forty real cities. No goals. Just the world, running.',

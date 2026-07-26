@@ -17,10 +17,18 @@ export * from './social.ts';
 export * from './economy.ts';
 export * from './actions.ts';
 export * from './cognition.ts';
+export * from './mobility.ts';
 export * from './world.ts';
 export * from './simulation.ts';
 
 export { CITIES, CITY_BY_ID, haversineKm, flightHours, flightCostUSD } from './data/cities.ts';
+export {
+  PASSPORT_STRENGTH,
+  FREEDOM_OF_MOVEMENT,
+  WORK_REGIME,
+  workRegime,
+  assessMobility,
+} from './data/visas.ts';
 export {
   OCCUPATIONS,
   VALUES,

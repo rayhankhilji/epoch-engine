@@ -17,6 +17,10 @@ import {
   runwayMonths,
   socialCircle,
   stamp,
+  describePassport,
+  mobilityFor,
+  passportStrength,
+  haversineKm,
   strength,
   topBeliefs,
   type Agent,
@@ -176,6 +180,26 @@ export function agentDetail(world: World, agent: Agent, timeline?: WorldEvent[])
       familiarity: rel.familiarity,
       interactions: rel.interactions,
     })),
+
+    // Which passport they hold shapes their options more than almost anything
+    // else about them, so it is first-class in the inspector.
+    passport: {
+      nationality: agent.nationality,
+      strength: passportStrength(agent.nationality),
+      description: describePassport(agent),
+    },
+
+    mobility: Object.values(world.cities)
+      .filter((candidate) => candidate.id !== agent.cityId)
+      .map((candidate) => ({
+        cityId: candidate.id,
+        cityName: candidate.name,
+        country: candidate.country,
+        km: city ? Math.round(haversineKm(city, candidate)) : 0,
+        ...mobilityFor(world, agent, candidate),
+      }))
+      .sort((a, b) => Number(b.allowed) - Number(a.allowed) || a.km - b.km)
+      .slice(0, 12),
 
     timeline: timeline ?? agentTimeline(world, agent.id, 200),
   };

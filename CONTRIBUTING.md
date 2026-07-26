@@ -6,7 +6,7 @@ Thanks for looking. Epoch is small, deliberately dependency-light, and easy to r
 
 ```bash
 npm install
-npm test          # 94 tests, hermetic — no network, no keys
+npm test          # 109 tests, hermetic — no network, no keys
 npm run typecheck # strict TypeScript across every package
 npm run sim -- --scenario exodus --days 3 --offline
 ```

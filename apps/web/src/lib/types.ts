@@ -149,6 +149,18 @@ export interface AgentDetail extends AgentSummary {
     edges: Array<{ from: string; to: string; relation: string; weight: number }>;
   };
   circle: Tie[];
+  passport: { nationality: string; strength: number; description: string };
+  mobility: Array<{
+    cityId: string;
+    cityName: string;
+    country: string;
+    km: number;
+    allowed: boolean;
+    route: 'citizen' | 'freedom-of-movement' | 'sponsored' | 'self-funded' | 'high-skill' | 'blocked';
+    costUSD: number;
+    leadDays: number;
+    explanation: string;
+  }>;
   timeline: WorldEvent[];
 }
 

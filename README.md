@@ -165,6 +165,28 @@ and a warning — never an exception. A world with stale weather is still a worl
 `resolveCity('Manila')` will geocode a city the bundled dataset has never heard of and give it real
 coordinates, a real timezone and a real currency.
 
+### Borders
+
+The most consequential fact about an ambitious person is often which passport they hold, so Epoch
+models it. Entry and the **right to work** are separate — plenty of people can visit somewhere they
+could never take a job — and there are five ways in: citizenship, freedom of movement, an employer
+sponsor, a self-funded route, or being exceptional enough that a country makes a case-by-case
+exception.
+
+Four engineers, identical skills, identical ambition, different documents:
+
+```
+Chidi Adeyemi   (NG)  0/5 destinations open   weak passport
+Anika Sethi     (IN)  0/5 destinations open   limited passport
+Felix Ashcroft  (DE)  3/5 destinations open   EU freedom of movement + a self-funded route to Dubai
+Robin Whitmore  (US)  1/5 destinations open   strong passport for travel, no automatic right to work
+```
+
+Every destination in an agent's situation report carries an immigration note, so the agent knows what
+it would actually take. `relocate` fails on paperwork before it fails on money — an agent with half a
+million dollars and no right to work still doesn't get in. Try the `borders` scenario and open the
+**Borders** tab on each of the four.
+
 ---
 
 ## Scenarios
@@ -179,6 +201,7 @@ A scenario states a goal and never a method.
 | `nobel` | A researcher with a decade of funding and a question nobody has answered. |
 | `quiet-life` | Nobody is trying to change the world. They're just trying to be happy. |
 | `exodus` | Twelve people in a city that has become too expensive to stay in. |
+| `borders` | Four engineers with the same skills and the same ambition. Four different passports. |
 | `earth` | Two hundred people across forty real cities. No goals. Just the world, running. |
 
 Adding your own is a small object in [`scenarios.ts`](apps/server/src/scenarios.ts) — cities,
@@ -197,7 +220,7 @@ npm run dev:web    # console on :3000
 - **Society** — a force-directed relationship graph. Edge colour carries the sign of the tie: warm or hostile.
 - **Economy** — wealth distribution with a Gini coefficient, and what the population is worth.
 - **Markets** — live prices and the headlines the agents are actually reading.
-- **Agent inspector** — one person's goals, current plan, distilled beliefs, memory stream, knowledge graph, social circle and entire life timeline.
+- **Agent inspector** — one person's goals, current plan, distilled beliefs, memory stream, knowledge graph, social circle, immigration options and entire life timeline.
 
 The globe is deliberately *not* a textured Earth. Epoch models cities and the people in them, not
 terrain, so the globe shows exactly what the simulation knows and nothing it doesn't.
@@ -297,7 +320,7 @@ population and an expensive one on the characters you care about — that's what
 ## Development
 
 ```bash
-npm test          # 94 tests, hermetic — no network, no keys
+npm test          # 109 tests, hermetic — no network, no keys
 npm run typecheck # strict TypeScript across every package
 npm run build     # production build of the console
 ```
